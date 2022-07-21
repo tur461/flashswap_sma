@@ -1,103 +1,47 @@
-import { ethers } from 'hardhat';
-import { BigNumber } from 'ethers';
-import pool from '@ricokahler/pool';
+import log, { cLog } from "./log";
 import AsyncLock from 'async-lock';
+import { IProfit } from "./files/interfaces";
+import { big, ethForm } from "./files/utils";
+import { ADDRESS, CONFIG } from "../constants";
+import { calculateNetProfit, fBot, getProfit } from "./files/fbot";
 
-import { FlashBot } from '../typechain/FlashBot';
-import { Network, tryLoadPairs, getTokens } from './tokens';
-import { getBaseTokenPrice } from './basetoken-price';
-import log from './log';
-import config from './config';
-import { ADDRESS } from '../constants';
+async function arbitrager() : Promise<any> {
+    const lock = new AsyncLock({ timeout: 2000, maxPending: 50 });
+    // scProfit -> profit from our smart contract ie fBot 
+    const scProfit: IProfit = await getProfit();
+    log.info(`profit: ${ethForm(scProfit.profit.toString())} Base-Tokens`);
+    if(scProfit.profit.eq(big(0))) return log.info('zero profit!');
+    
+    const netProfit = await calculateNetProfit(scProfit);
+    log.info(`net profit: ${netProfit}`);
+    if(netProfit < CONFIG.MIN_PROFIT_THRESHOLD) return log.info('net profit not enough!');
+    
+    log.info('Calling arbitrage function on-chain..');
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function calcNetProfit(profitWei: BigNumber, address: string, baseTokens: Tokens): Promise<number> {
-  let price = await getBaseTokenPrice();
-  if (baseTokens.wtm.address == address) {
-    price = await getBaseTokenPrice();
-  }
-  let profit = parseFloat(ethers.utils.formatEther(profitWei));
-  profit = profit * price;
-
-  const gasCost = price * parseFloat(ethers.utils.formatEther(config.gasPrice)) * (config.gasLimit as number);
-  return profit - gasCost;
-}
-
-function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens) {
-  const lock = new AsyncLock({ timeout: 2000, maxPending: 20 });
-  return async function arbitrage(pair: ArbitragePair) {
-    const [pair0, pair1] = [ADDRESS.UNI_PAIR, ADDRESS.SUSHI_PAIR];
-
-    let res: [BigNumber, string] & {
-      profit: BigNumber;
-      baseToken: string;
-    };
     try {
-      res = await flashBot.getProfit(pair0, pair1);
-      log.info(`Profit on ${pair.symbols}: ${ethers.utils.formatEther(res.profit)}`);
-    } catch (err) {
-      log.debug(err);
-      return;
+        await lock.acquire('fBot', async () => {
+            const tx = await fBot?.flashArbitrage(ADDRESS.UNI_PAIR, ADDRESS.SUSHI_PAIR, {
+                gasPrice: CONFIG.GAS_PRICE,
+                gasLimit: CONFIG.GAS_LIMIT,
+            });
+            const receipt = await tx.wait(1);
+            log.info(`Tx: ${receipt.transactionHash}`);
+        })
+    } catch(e) {
+        if (
+            e.message === 'Too much pending tasks' || 
+            e.message === 'async-lock timed out'
+        ) return; 
+        cLog(e); 
     }
-
-    if (res.profit.gt(BigNumber.from('0'))) {
-      const netProfit = await calcNetProfit(res.profit, res.baseToken, baseTokens);
-      log.info(`net profit: ${netProfit}`);
-      if (netProfit < config.minimumProfit) {
-        return;
-      }
-
-      log.info(`Calling flash arbitrage, net profit: ${netProfit}`);
-      try {
-        // lock to prevent tx nonce overlap
-        await lock.acquire('flash-bot', async () => {
-          const estimate: BigNumber = await flashBot.estimateGas.flashArbitrage(pair0, pair1);
-          console.log('Estimated Gas:', estimate.toBigInt().toString());
-          const response = await flashBot.flashArbitrage(pair0, pair1, {
-            gasPrice: config.gasPrice,
-            gasLimit: config.gasLimit,
-          });
-          const receipt = await response.wait(1);
-          log.info(`Tx: ${receipt.transactionHash}`);
-        });
-      } catch (err) {
-        if (err.message === 'Too much pending tasks' || err.message === 'async-lock timed out') {
-          return;
-        }
-        log.error(err);
-      }
-    }
-  };
+    
+    return 0;
 }
 
 async function main() {
-  // const pairs = await tryLoadPairs(Network.KCC);
-  const pairs: ArbitragePair[] = [
-    {
-      symbols: 'WTM/PNA',
-      pairs: [ADDRESS.UNI_PAIR, ADDRESS.SUSHI_PAIR],
-    }
-  ];
-  const flashBot = (await ethers.getContractAt('FlashBot', config.contractAddr)) as FlashBot;
-  const [baseTokens] = getTokens(Network.RINK);
-
-  log.info('Start arbitraging');
-  while (true) {
-    await pool({
-      collection: pairs,
-      task: arbitrageFunc(flashBot, baseTokens),
-      // maxConcurrency: config.concurrency,
-    });
-    await sleep(1000);
-  }
+    await arbitrager();
 }
 
 main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    log.error(err);
-    process.exit(1);
-  });
+.then(() => log.info('exiting from main...'))
+.catch(e => log.error('error in main!.'));

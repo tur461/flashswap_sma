@@ -217,15 +217,19 @@ contract FlashBot is Ownable, IUniswapV2Callee {
             callbackData.debtTokenOutAmount = baseTokenOutAmount;
 
             bytes memory data = abi.encode(callbackData);
+            console.log('calling flash swap..');
             IUniswapV2Pair(info.lowerPool).swap(amount0Out, amount1Out, address(this), data);
         }
-
+        console.log('flash swap success');
         uint256 balanceAfter = IERC20(info.baseToken).balanceOf(address(this));
+        console.log('balancesBefore:', balanceBefore);
+        console.log('balancesAfter:', balanceAfter);
         require(balanceAfter > balanceBefore, 'Losing money');
-
-        if (info.baseToken == WETH) {
-            IWETH(info.baseToken).withdraw(balanceAfter);
-        }
+        console.log('withdrawing..');
+        // if (info.baseToken == WETH) {
+        //     IWETH(info.baseToken).withdraw(balanceAfter);
+        // }
+        console.log('withdraw success.');
         permissionedPairAddress = address(1);
     }
 
@@ -235,20 +239,26 @@ contract FlashBot is Ownable, IUniswapV2Callee {
         uint256 amount1,
         bytes memory data
     ) public override {
+        console.log('uniswapV2Call in fBot');
         // access control
         require(msg.sender == permissionedPairAddress, 'Non permissioned address call');
         require(sender == address(this), 'Not from this contract');
-
+        
         uint256 borrowedAmount = amount0 != 0 ? amount0 : amount1;
+        console.log('borrow amount:', borrowedAmount);
         CallbackData memory info = abi.decode(data, (CallbackData));
 
         IERC20(info.borrowedToken).safeTransfer(info.targetPool, borrowedAmount);
-
+        console.log('borrow token:', info.borrowedToken);
         (uint256 amount0Out, uint256 amount1Out) =
             info.debtTokenSmaller ? (info.debtTokenOutAmount, uint256(0)) : (uint256(0), info.debtTokenOutAmount);
+        console.log('amount0Out:', amount0Out, 'amount1Out:', amount1Out);
         IUniswapV2Pair(info.targetPool).swap(amount0Out, amount1Out, address(this), new bytes(0));
-
+        console.log('target pool:', info.targetPool);
         IERC20(info.debtToken).safeTransfer(info.debtPool, info.debtAmount);
+        console.log('transfered debt pool:', info.debtPool);
+        console.log('transfered debt token:', info.debtToken);
+        console.log('transfered debt amount:', info.debtAmount);
     }
 
     /// @notice Calculate how much profit we can by arbitraging between two pools

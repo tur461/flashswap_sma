@@ -6,17 +6,24 @@ export const ADDRESS = {
 }
 
 export const CONTRACTS = {
+  USDT: 'USDT',
   WETH: 'WETH9',
+  SAITAMA: 'SAITAMA',
+  PAIR: 'UniswapV2Pair',
   FLASH_BOT: 'FlashBot',
   ROUTER: 'UniswapV2Router02',
   FACTORY: 'UniswapV2Factory',
 }
 
 export const TAG = {
-  WETH: 'Weth9_01',
+  USDT: 'USDT_01',
+  WETH: 'WETH9_01',
+  SAITAMA: 'SAITAMA_01',
   FLASH_BOT: 'FlashBot_01',
-  ROUTER: 'UniswapV2Router02_01',
-  FACTORY: 'UniswapV2Factory_01',
+  UNI_ROUTER: 'UniswapV2Router02_01',
+  UNI_FACTORY: 'UniswapV2Factory_01',
+  SUSHI_ROUTER: 'UniswapV2Router02_02',
+  SUSHI_FACTORY: 'UniswapV2Factory_02',
 }
 
 export const INIT_VAL = {  

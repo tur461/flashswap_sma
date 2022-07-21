@@ -1,7 +1,7 @@
 import { createLogger, format, transports } from 'winston';
-import config from './config';
+import { CONFIG } from '../constants';
 
-const logger = createLogger({
+const log = createLogger({
   format: format.combine(
     format.colorize(),
     format.timestamp({
@@ -11,7 +11,9 @@ const logger = createLogger({
       (info) => `${info.timestamp} ${info.level}: ${info.message}` + (info.splat !== undefined ? `${info.splat}` : ' ')
     )
   ),
-  transports: [new transports.Console({ level: config.logLevel })],
+  transports: [new transports.Console({ level: CONFIG.LOG_LEVEL })],
 });
 
-export default logger;
+export const cLog = console.log;
+
+export default log;

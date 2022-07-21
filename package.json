@@ -5,7 +5,11 @@
   "license": "MIT",
   "scripts": {
     "prettier": "prettier --write 'contracts/**/*.sol'",
-    "bot": "hardhat run --network rinkeby bot/index.ts"
+    "bot": "hardhat run --network local bot/index.ts",
+    "post": "hardhat run --network local scripts/post_deploy/run.ts",
+    "dInfo": "hardhat run --network local scripts/post_deploy/dex_info.ts",
+    "liq": "hardhat run --network local scripts/post_deploy/add_liquidity.ts",
+    "fBot": "hardhat run --network local scripts/post_deploy/flash_bot_pd.ts"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
