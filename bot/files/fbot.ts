@@ -1,9 +1,9 @@
+import log from "../log";
 import { Contract } from "ethers";
+import { IProfit } from "./interfaces";
 import { ADDRESS, CONFIG } from "../../constants";
 import { CONTRACTS } from "../../scripts/helpers/constants";
-import log, { cLog } from "../log";
-import { IProfit } from "./interfaces";
-import { ethForm, getContract, getEthPriceInDollar, getUSDTPriceInDollar, parseUnits, weiForm } from "./utils";
+import { ethForm, getContract, getEthPriceInDollar, getUSDTPriceInDollar } from "./utils";
 
 export let fBot : Contract | null = null;
 

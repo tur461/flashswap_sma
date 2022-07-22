@@ -46,3 +46,5 @@ export async function getDexInfo() {
                 1: ${sAmtOut[1]/10**18}
     `)
 }
+
+getDexInfo().then().catch();

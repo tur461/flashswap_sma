@@ -1,8 +1,8 @@
-import '@nomiclabs/hardhat-waffle';
-import '@nomiclabs/hardhat-ethers';
 import 'hardhat-deploy';
 import * as dotenv from 'dotenv';
-import { HardhatUserConfig, task } from 'hardhat/config';
+import '@nomiclabs/hardhat-waffle';
+import '@nomiclabs/hardhat-ethers';
+import { HardhatUserConfig } from 'hardhat/config';
 
 const chainIds = {
     goerli: 5,
@@ -19,22 +19,7 @@ const chainIds = {
 dotenv.config();
 
 const INFURA_TOKEN = process.env.INFURA_TOKEN;
-const BSCSCAN_API_KEY = process.env.BSCSCAN_API_KEY;
-const BSC_MORALIS_TOKEN = process.env.BSC_MORALIS_TOKEN;
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
-
-
-// task("bsctest-verify", "verifies contracts on bsc tesnet")
-//   .addParam("network", "network to verify on")
-//   .setAction(async (taskArgs) => {
-//     // Create the contract instance
-//     const MyToken = await ethers.getContractFactory("MyToken");
-//     const myToken = await Aus.attach("0x80c5...");
-
-//     // Mint
-//     await myToken.mint(taskArgs.address, taskArgs.amount);
-// });
-
 
 const config: HardhatUserConfig = {
     defaultNetwork: "hardhat",

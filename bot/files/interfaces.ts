@@ -14,11 +14,6 @@ export interface IPrices {
     price1: BigNumber,
 }
 
-export interface IPriceCompares {
-    isDifference: boolean;
-    isPrice0GreaterThanPrice1?: boolean; 
-}
-
 export interface IProfit {
     profit: BigNumber;
     baseToken: string;

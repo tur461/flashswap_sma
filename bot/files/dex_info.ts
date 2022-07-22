@@ -11,8 +11,8 @@ export async function getAllDexContracts() : Promise<IDexes> {
     const uRouter = await getContract(CONTRACTS.ROUTER, ADDRESS.UNI_ROUTER); 
     const sRouter = await getContract(CONTRACTS.ROUTER, ADDRESS.SUSHI_ROUTER);
     
-    const uPairAddr = await uFactory.getPair(ADDRESS.WTM, ADDRESS.PNA);
-    const sPairAddr = await sFactory.getPair(ADDRESS.WTM, ADDRESS.PNA);
+    const uPairAddr = await uFactory.getPair(ADDRESS.SAITAMA, ADDRESS.USDT);
+    const sPairAddr = await sFactory.getPair(ADDRESS.SAITAMA, ADDRESS.USDT);
     const uPair = await getContract(CONTRACTS.PAIR, uPairAddr);
     const sPair = await getContract(CONTRACTS.PAIR, sPairAddr);
     
@@ -28,8 +28,8 @@ export async function getAllDexContracts() : Promise<IDexes> {
 
 export async function getPrices() : Promise<IPrices> {
     const dexes = await getAllDexContracts();
-    const amountsOut0 = await dexes.uRouter.getAmountsOut(ethers.utils.parseEther('1'), [ADDRESS.WTM, ADDRESS.PNA]);
-    const amountsOut1 = await dexes.sRouter.getAmountsOut(ethers.utils.parseEther('1'), [ADDRESS.WTM, ADDRESS.PNA]);
+    const amountsOut0 = await dexes.uRouter.getAmountsOut(ethers.utils.parseEther('1'), [ADDRESS.SAITAMA, ADDRESS.USDT]);
+    const amountsOut1 = await dexes.sRouter.getAmountsOut(ethers.utils.parseEther('1'), [ADDRESS.SAITAMA, ADDRESS.USDT]);
     return {
         price0: amountsOut0[1],
         price1: amountsOut1[1],

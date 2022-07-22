@@ -1,47 +1,61 @@
+import cron from 'node-cron';
 import log, { cLog } from "./log";
 import AsyncLock from 'async-lock';
 import { IProfit } from "./files/interfaces";
-import { big, ethForm } from "./files/utils";
-import { ADDRESS, CONFIG } from "../constants";
+import { big, ethForm, sleep } from "./files/utils";
+import { ADDRESS, CONFIG, VAL } from "../constants";
 import { calculateNetProfit, fBot, getProfit } from "./files/fbot";
 
 async function arbitrager() : Promise<any> {
-    const lock = new AsyncLock({ timeout: 2000, maxPending: 50 });
-    // scProfit -> profit from our smart contract ie fBot 
+    log.info('bot main');
+    // const lock = new AsyncLock({ timeout: 2000, maxPending: 50 });
     const scProfit: IProfit = await getProfit();
     log.info(`profit: ${ethForm(scProfit.profit.toString())} Base-Tokens`);
-    if(scProfit.profit.eq(big(0))) return log.info('zero profit!');
+    
+    if(scProfit.profit.eq(big(0))) {
+        log.info('zero profit!');
+        return VAL.SUCCESS;
+    }
     
     const netProfit = await calculateNetProfit(scProfit);
     log.info(`net profit: ${netProfit}`);
-    if(netProfit < CONFIG.MIN_PROFIT_THRESHOLD) return log.info('net profit not enough!');
+    
+    if(netProfit < CONFIG.MIN_PROFIT_THRESHOLD) {
+        log.info('net profit not enough!');
+        return VAL.SUCCESS;
+    }
     
     log.info('Calling arbitrage function on-chain..');
 
     try {
-        await lock.acquire('fBot', async () => {
-            const tx = await fBot?.flashArbitrage(ADDRESS.UNI_PAIR, ADDRESS.SUSHI_PAIR, {
-                gasPrice: CONFIG.GAS_PRICE,
-                gasLimit: CONFIG.GAS_LIMIT,
-            });
-            const receipt = await tx.wait(1);
-            log.info(`Tx: ${receipt.transactionHash}`);
+        const gasLimit = await fBot?.flashArbitrage(ADDRESS.UNI_PAIR, ADDRESS.SUSHI_PAIR);
+        cLog('gas limit:', gasLimit);
+        fBot?.flashArbitrage(ADDRESS.UNI_PAIR, ADDRESS.SUSHI_PAIR, {
+            gasPrice: CONFIG.GAS_PRICE,
+            gasLimit: CONFIG.GAS_LIMIT,
+        }).then((tx: any) => {
+            tx.wait(1).then((rc: any) => {
+                sleep(5000).then(_ => {
+                    looper();
+                })
+            })
         })
-    } catch(e) {
-        if (
-            e.message === 'Too much pending tasks' || 
-            e.message === 'async-lock timed out'
-        ) return; 
-        cLog(e); 
-    }
-    
-    return 0;
+    } catch(e) {}
 }
-
-async function main() {
+async function looper() {
     await arbitrager();
 }
 
-main()
-.then(() => log.info('exiting from main...'))
-.catch(e => log.error('error in main!.'));
+looper();
+
+// cron.schedule('* * * * *', async _ => {
+//     await arbitrager();
+// })
+
+// let i = 0;
+// (async _ => {
+//     const provider = ethers.getDefaultProvider()
+//     provider.on("block", async blockNumber => {
+//         await arbitrager();
+//     });
+// })()

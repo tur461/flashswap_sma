@@ -79,14 +79,12 @@ async function addLiquidityOnChain(amounts: any[], router: Contract) {
     const deadline = Math.round(Date.now() / 1000) + 60 * 60;
     const amts = amounts.map(amt => amt.toString());
     await getTokensWithInfo();
-    log.info(`account: ${myAccount}`);
     let gasLimit = await Token.A.tkn?.estimateGas.approve(router.address, amts[0]);
     await Token.A.tkn?.approve(router.address, amts[0]);
     op.gas = gasLimit;
     gasLimit = await Token.B.tkn?.estimateGas.approve(router.address, amts[1]);
     op.gas = gasLimit
     await Token.B.tkn?.approve(router.address, amts[1]);
-
     gasLimit = await router.estimateGas.addLiquidity(
         Token.A.tkn?.address,
         Token.B.tkn?.address,
@@ -98,6 +96,7 @@ async function addLiquidityOnChain(amounts: any[], router: Contract) {
         deadline
     );
     op.gas = gasLimit;
+    log.info(`GasLimit: ${gasLimit}`);
     await router.addLiquidity(
         Token.A.tkn?.address,
         Token.B.tkn?.address,
