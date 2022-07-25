@@ -9,7 +9,8 @@
     "post": "hardhat run --network local scripts/post_deploy/run.ts",
     "dInfo": "hardhat run --network local scripts/post_deploy/dex_info.ts",
     "liq": "hardhat run --network local scripts/post_deploy/add_liquidity.ts",
-    "fBot": "hardhat run --network local scripts/post_deploy/flash_bot_pd.ts"
+    "fBot": "hardhat run --network local scripts/post_deploy/flash_bot_pd.ts",
+    "aInfo": "hardhat run --network local scripts/post_deploy/create_arb_opportunity.ts"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",

@@ -18,3 +18,13 @@ export interface IProfit {
     profit: BigNumber;
     baseToken: string;
 }
+export interface ITxQueue {
+    buf: any;
+    Q: any[];
+    id: number;
+    getId: Function;
+    add2Q: Function;
+    add2Buf: Function;
+    waitForTx: Function;
+    isBufEmpty: Function;
+}

@@ -1,17 +1,17 @@
+import { expect } from 'chai';
+import { ADDRESS } from '../constants';
+import { ethers, waffle } from 'hardhat';
+import { IWETH } from '../typechain/IWETH';
+import { FlashBot } from '../typechain/FlashBot';
 import { Contract } from '@ethersproject/contracts';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { expect } from 'chai';
-import { ethers, waffle } from 'hardhat';
-import { ADDRESS } from '../constants';
-import { FlashBot } from '../typechain/FlashBot';
-import { IWETH } from '../typechain/IWETH';
 
 describe('Flashswap', () => {
   let weth: IWETH;
   let flashBot: FlashBot;
 
-  const TKN_1 = ADDRESS.WTM;
-  const TKN_2 = ADDRESS.PNA;
+  const TKN_1 = ADDRESS.SAITAMA;
+  const TKN_2 = ADDRESS.USDT;
 
   beforeEach(async () => {
     const wethFactory = (await ethers.getContractAt('IWETH', TKN_1)) as IWETH;

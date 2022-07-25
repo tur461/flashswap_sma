@@ -3,7 +3,7 @@ import { addLiquidity } from "./add_liquidity";
 
 async function main() {
     await addLiquidity();
-    // await getDexInfo();
+    await getDexInfo();
 }
 
 (async () => await main())();

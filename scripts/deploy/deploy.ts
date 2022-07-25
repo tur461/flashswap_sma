@@ -6,6 +6,7 @@ import { deployFlashBot } from "../files/flashbot";
 import { DeployOptions, IDeployDexesResult } from "../helpers/interfaces";
 import { run } from "hardhat";
 import { Contract } from "ethers";
+import { editConstantsAfterDeploy } from "../files/up_constants";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     await run('compile');
@@ -41,6 +42,18 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           Factory:  ${dexes.sFactory.address}\n
       Bot:\n
         FlashBot: ${flashBot.address}
-      `)
+      `);
+
+      editConstantsAfterDeploy({
+        WETH: tokens.weth.address,
+        USDT: tokens.usdt.address,
+        SAITAMA: tokens.saitama.address,
+        FLASH_BOT: flashBot.address,
+        UNI_ROUTER: dexes.uRouter.address,
+        UNI_FACTORY: dexes.uFactory.address,
+        SUSHI_ROUTER: dexes.sRouter.address,
+        SUSHI_FACTORY: dexes.sFactory.address,
+
+      });
 };
 export default func;

@@ -2,8 +2,6 @@
 pragma solidity ^0.8.4;
 pragma abicoder v2;
 
-import 'hardhat/console.sol';
-
 import './interfaces/IWETH.sol';
 import './libraries/Decimal.sol';
 import './interfaces/IERC20.sol';
@@ -118,7 +116,7 @@ contract FlashBot is Ownable, IUniswapV2Callee {
     }
 
     function isbaseTokenSmaller(address pool0, address pool1)
-        internal
+        external
         view
         returns (
             bool baseSmaller,
@@ -145,7 +143,7 @@ contract FlashBot is Ownable, IUniswapV2Callee {
         address pool1,
         bool baseTokenSmaller
     )
-        internal
+        external
         view
         returns (
             address lowerPool,
@@ -176,18 +174,16 @@ contract FlashBot is Ownable, IUniswapV2Callee {
                 ? (pool1Reserve0, pool1Reserve1, pool0Reserve0, pool0Reserve1)
                 : (pool1Reserve1, pool1Reserve0, pool0Reserve1, pool0Reserve0);
         }
-        console.log('Borrow from pool:', lowerPool);
-        console.log('Sell to pool:', higherPool);
     }
 
     /// @notice Do an arbitrage between two Uniswap-like AMM pools
     /// @dev Two pools must contains same token pair
     function flashArbitrage(address pool0, address pool1) external {
         ArbitrageInfo memory info;
-        (info.baseTokenSmaller, info.baseToken, info.quoteToken) = isbaseTokenSmaller(pool0, pool1);
+        (info.baseTokenSmaller, info.baseToken, info.quoteToken) = this.isbaseTokenSmaller(pool0, pool1);
 
         OrderedReserves memory orderedReserves;
-        (info.lowerPool, info.higherPool, orderedReserves) = getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
+        (info.lowerPool, info.higherPool, orderedReserves) = this.getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
 
         // this must be updated every transaction for callback origin authentication
         permissionedPairAddress = info.lowerPool;
@@ -196,7 +192,7 @@ contract FlashBot is Ownable, IUniswapV2Callee {
 
         // avoid stack too deep error
         {
-            uint256 borrowAmount = calcBorrowAmount(orderedReserves);
+            uint256 borrowAmount = this.calcBorrowAmount(orderedReserves);
             (uint256 amount0Out, uint256 amount1Out) =
                 info.baseTokenSmaller ? (uint256(0), borrowAmount) : (borrowAmount, uint256(0));
             // borrow quote token on lower price pool, calculate how much debt we need to pay demoninated in base token
@@ -204,7 +200,6 @@ contract FlashBot is Ownable, IUniswapV2Callee {
             // sell borrowed quote token on higher price pool, calculate how much base token we can get
             uint256 baseTokenOutAmount = getAmountOut(borrowAmount, orderedReserves.b2, orderedReserves.a2);
             require(baseTokenOutAmount > debtAmount, 'Arbitrage fail, no profit');
-            console.log('Profit:', (baseTokenOutAmount - debtAmount) / 1 ether);
 
             // can only initialize this way to avoid stack too deep error
             CallbackData memory callbackData;
@@ -217,19 +212,13 @@ contract FlashBot is Ownable, IUniswapV2Callee {
             callbackData.debtTokenOutAmount = baseTokenOutAmount;
 
             bytes memory data = abi.encode(callbackData);
-            console.log('calling flash swap..');
             IUniswapV2Pair(info.lowerPool).swap(amount0Out, amount1Out, address(this), data);
         }
-        console.log('flash swap success');
         uint256 balanceAfter = IERC20(info.baseToken).balanceOf(address(this));
-        console.log('balancesBefore:', balanceBefore);
-        console.log('balancesAfter:', balanceAfter);
         require(balanceAfter > balanceBefore, 'Losing money');
-        console.log('withdrawing..');
         // if (info.baseToken == WETH) {
         //     IWETH(info.baseToken).withdraw(balanceAfter);
         // }
-        console.log('withdraw success.');
         permissionedPairAddress = address(1);
     }
 
@@ -239,36 +228,28 @@ contract FlashBot is Ownable, IUniswapV2Callee {
         uint256 amount1,
         bytes memory data
     ) public override {
-        console.log('uniswapV2Call in fBot');
         // access control
         require(msg.sender == permissionedPairAddress, 'Non permissioned address call');
         require(sender == address(this), 'Not from this contract');
         
         uint256 borrowedAmount = amount0 != 0 ? amount0 : amount1;
-        console.log('borrow amount:', borrowedAmount);
         CallbackData memory info = abi.decode(data, (CallbackData));
 
         IERC20(info.borrowedToken).safeTransfer(info.targetPool, borrowedAmount);
-        console.log('borrow token:', info.borrowedToken);
         (uint256 amount0Out, uint256 amount1Out) =
             info.debtTokenSmaller ? (info.debtTokenOutAmount, uint256(0)) : (uint256(0), info.debtTokenOutAmount);
-        console.log('amount0Out:', amount0Out, 'amount1Out:', amount1Out);
         IUniswapV2Pair(info.targetPool).swap(amount0Out, amount1Out, address(this), new bytes(0));
-        console.log('target pool:', info.targetPool);
         IERC20(info.debtToken).safeTransfer(info.debtPool, info.debtAmount);
-        console.log('transfered debt pool:', info.debtPool);
-        console.log('transfered debt token:', info.debtToken);
-        console.log('transfered debt amount:', info.debtAmount);
     }
 
     /// @notice Calculate how much profit we can by arbitraging between two pools
     function getProfit(address pool0, address pool1) external view returns (uint256 profit, address baseToken) {
-        (bool baseTokenSmaller, , ) = isbaseTokenSmaller(pool0, pool1);
+        (bool baseTokenSmaller, , ) = this.isbaseTokenSmaller(pool0, pool1);
         baseToken = baseTokenSmaller ? IUniswapV2Pair(pool0).token0() : IUniswapV2Pair(pool0).token1();
 
-        (, , OrderedReserves memory orderedReserves) = getOrderedReserves(pool0, pool1, baseTokenSmaller);
+        (, , OrderedReserves memory orderedReserves) = this.getOrderedReserves(pool0, pool1, baseTokenSmaller);
 
-        uint256 borrowAmount = calcBorrowAmount(orderedReserves);
+        uint256 borrowAmount = this.calcBorrowAmount(orderedReserves);
         // borrow quote token on lower price pool,
         uint256 debtAmount = getAmountIn(borrowAmount, orderedReserves.a1, orderedReserves.b1);
         // sell borrowed quote token on higher price pool
@@ -281,7 +262,7 @@ contract FlashBot is Ownable, IUniswapV2Callee {
     }
 
     /// @dev calculate the maximum base asset amount to borrow in order to get maximum profit during arbitrage
-    function calcBorrowAmount(OrderedReserves memory reserves) internal pure returns (uint256 amount) {
+    function calcBorrowAmount(OrderedReserves memory reserves) external pure returns (uint256 amount) {
         // we can't use a1,b1,a2,b2 directly, because it will result overflow/underflow on the intermediate result
         // so we:
         //    1. divide all the numbers by d to prevent from overflow/underflow

@@ -27,6 +27,7 @@ export async function getContract(contractName: string, addr: string) : Promise<
 }
 
 let ethPrice = 0;
+
 const lock = new AsyncLock();
 // clear Eth price every hour
 setInterval(() => {

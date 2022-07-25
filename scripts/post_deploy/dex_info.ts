@@ -2,6 +2,7 @@ import { Contract } from "ethers";
 import { ethers } from "hardhat";
 import log from "../../bot/log";
 import { ADDRESS } from "../../constants";
+import { editConstantsAfterPostDeploy } from "../files/up_constants";
 import { CONTRACTS } from "../helpers/constants";
 import { Pairs } from "../helpers/interfaces";
 
@@ -24,7 +25,7 @@ async function getPrice(router: Contract) : Promise<number[]> {
     return amountsOut;
 }
 
-export async function getDexInfo() {
+export async function _getDexInfo() : Promise<Pairs> {
     const uFactory = await getContract(CONTRACTS.FACTORY, ADDRESS.UNI_FACTORY);
     const sFactory = await getContract(CONTRACTS.FACTORY, ADDRESS.SUSHI_FACTORY); 
     const uRouter = await getContract(CONTRACTS.ROUTER, ADDRESS.UNI_ROUTER); 
@@ -44,7 +45,17 @@ export async function getDexInfo() {
             Amounts Out on SushiSwap:\n
                 0: ${sAmtOut[0]/10**18}
                 1: ${sAmtOut[1]/10**18}
-    `)
+    `);
+    return prs;
 }
 
-getDexInfo().then().catch();
+export async function getDexInfo() {
+    const prs = await _getDexInfo();
+    editConstantsAfterPostDeploy({
+        UNI_PAIR: prs.uPair,
+        SUSHI_PAIR: prs.sPair,
+    });
+}
+
+if(process.argv[0]=== '-a')
+    _getDexInfo().then().catch();

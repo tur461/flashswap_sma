@@ -109,7 +109,7 @@ async function addLiquidityOnChain(amounts: any[], router: Contract) {
     );
 }
 
-export async function addLiquidity() {
+export async function addLiquidity(): Promise<any> {
     try{
         await onUniSwap();
         await onSushiSwap();
