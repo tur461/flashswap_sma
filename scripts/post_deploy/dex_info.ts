@@ -1,6 +1,6 @@
 import { Contract } from "ethers";
 import { ethers } from "hardhat";
-import log from "../../bot/log";
+import log, { cLog } from "../../bot/log";
 import { ADDRESS } from "../../constants";
 import { editConstantsAfterPostDeploy } from "../files/up_constants";
 import { CONTRACTS } from "../helpers/constants";
@@ -56,6 +56,3 @@ export async function getDexInfo() {
         SUSHI_PAIR: prs.sPair,
     });
 }
-
-if(process.argv[0]=== '-a')
-    _getDexInfo().then().catch();

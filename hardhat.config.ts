@@ -2,7 +2,7 @@ import 'hardhat-deploy';
 import * as dotenv from 'dotenv';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-ethers';
-import { HardhatUserConfig } from 'hardhat/config';
+import * as hTypes from 'hardhat/types';
 
 const chainIds = {
     goerli: 5,
@@ -21,7 +21,7 @@ dotenv.config();
 const INFURA_TOKEN = process.env.INFURA_TOKEN;
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
-const config: HardhatUserConfig = {
+const config: hTypes.HardhatUserConfig = {
     defaultNetwork: "hardhat",
     solidity: {
       compilers: [
@@ -166,6 +166,8 @@ const config: HardhatUserConfig = {
         timeout: 60000,
     },
 };
+
+import './scripts/tasks';
 
 export default config;
 

@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "target": "es2018",
-        "module": "commonjs",
+        "module": "CommonJS",
         "strict": true,
         "esModuleInterop": true,
         "useUnknownInCatchVariables": false,
@@ -19,7 +19,7 @@
         "./scripts",
         "./bot",
         "./test"
-    ],
+, "constants.ts"    ],
     "files": [
         "./hardhat.config.ts"
     ]
